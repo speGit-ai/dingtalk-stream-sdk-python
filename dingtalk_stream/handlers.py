@@ -44,6 +44,7 @@ class EventHandler(object):
     async def process(self, event: EventMessage):
         return AckMessage.STATUS_NOT_IMPLEMENT, 'not implement'
 
+    # 此处执行raw_process方法，实现具体回复逻辑
     async def raw_process(self, event_message: EventMessage):
         code, message = await self.process(event_message)
         ack_message = AckMessage()
@@ -52,7 +53,7 @@ class EventHandler(object):
         ack_message.headers.content_type = Headers.CONTENT_TYPE_APPLICATION_JSON
         ack_message.message = message
         ack_message.data = event_message.data
-        return ack_message
+        return
 
 
 class SystemHandler(object):

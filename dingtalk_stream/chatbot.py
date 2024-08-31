@@ -829,6 +829,7 @@ class AsyncChatbotHandler(ChatbotHandler):
     async def raw_process(self, callback_message: CallbackMessage):
         def func():
             try:
+                # 在这里执行process逻辑，在主程序中的process会覆写此处的process
                 self.process(callback_message)
             except Exception as e:
                 self.logger.error(traceback.format_exc())

@@ -48,6 +48,7 @@ class DingTalkStreamClient(object):
 
     def register_callback_handler(self, topic, handler: CallbackHandler):
         handler.dingtalk_client = self
+        # 初始化时self.callback_handler_map = {}为空，实例化后注册后为字典里添加响应handler，字典可以储存对象
         self.callback_handler_map[topic] = handler
 
     def pre_start(self):
@@ -74,6 +75,7 @@ class DingTalkStreamClient(object):
             uri = '%s?ticket=%s' % (connection['endpoint'], urllib.parse.quote_plus(connection['ticket']))
             async with websockets.connect(uri) as websocket:
                 self.websocket = websocket
+                #  从这里接收用户原始消息 websocket
                 async for raw_message in websocket:
                     json_message = json.loads(raw_message)
                     asyncio.create_task(self.background_task(json_message))
@@ -86,9 +88,10 @@ class DingTalkStreamClient(object):
         except Exception as e:
             self.logger.error(f"error processing message: {e}")
 
+    # 消息路由，即分配不同消息的对应响应程序
     async def route_message(self, json_message):
         result = ''
-        msg_type = json_message.get('type', '')
+        msg_type = json_message.get('type', '')  # 类型分为SystemMessage、EventMessage、CallbackMessage
         ack = None
         if msg_type == SystemMessage.TYPE:
             msg = SystemMessage.from_dict(json_message)
@@ -100,11 +103,25 @@ class DingTalkStreamClient(object):
                 self.logger.warning("unknown message topic, topic=%s, message=%s", msg.headers.topic, json_message)
         elif msg_type == EventMessage.TYPE:
             msg = EventMessage.from_dict(json_message)
+            # 此处执行raw_process方法，实现具体回复逻辑 ack即为处理后的msg，将msg数据进行一定的格式化
             ack = await self.event_handler.raw_process(msg)
         elif msg_type == CallbackMessage.TYPE:
+            # 使用 CallbackMessage.from_dict(json_message) 方法，将收到的 JSON 消息解析为 CallbackMessage 对象 msg，该对象包含了消息的所有详细信息。
+            '''
+            msg.headers.topic：这是消息的topic，，用于区分不同类型的回调消息。
+            callback_handler_map是一个字典，存储了不同topic
+            对应的回调处理程序（CallbackHandler).get方法会从callback_handler_map中查找对应的处理程序。如果找到，则返回该处理程序handler；
+            如果找不到，则返回None。
+            '''
+
             msg = CallbackMessage.from_dict(json_message)
+            print("msg:",msg)
+            # 在callback_handler_map里找已实例化(注册的handler)
+            # 注册步骤在主程序的client.register_callback_handler(dingtalk_stream.chatbot.ChatbotMessage.TOPIC, card_bot_handler)
+            # 如果找到了对应的处理程序handler，系统会调用处理程序的raw_process方法来处理该消息
             handler = self.callback_handler_map.get(msg.headers.topic)
             if handler:
+                # 主程序里的handler继承自AsyncChatbotHandler，所以有raw_process方法
                 ack = await handler.raw_process(msg)
             else:
                 self.logger.warning("unknown callback message topic, topic=%s, message=%s", msg.headers.topic,

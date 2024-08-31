@@ -50,30 +50,33 @@ class CardBotHandler(dingtalk_stream.AsyncChatbotHandler):
 
     def process(self, callback: dingtalk_stream.CallbackMessage):
         incoming_message = dingtalk_stream.ChatbotMessage.from_dict(callback.data)
-
+        print(incoming_message)
+        # 继承自父类的父类的方法
         card_instance = self.reply_markdown_card("**这是一个markdown消息，初始状态，将于5s后更新**", incoming_message,
                                                  title="钉钉AI卡片",
                                                  logo="@lALPDfJ6V_FPDmvNAfTNAfQ")
 
         # 如果需要更新卡片内容的话，使用这个：
         time.sleep(5)
-        card_instance.update("**这是一个markdown消息，已更新**")
+        card_instance.update("**这是一个markdown消息，已更新**"
+                             "##二级标题")
 
         return AckMessage.STATUS_OK, 'OK'
 
 
 def main():
     logger = setup_logger()
-    options = define_options()
-
-    credential = dingtalk_stream.Credential(options.client_id, options.client_secret)
+    #options = define_options()
+    client_id = "dingspupls1elxdt1m40"
+    client_secret = "0w42DlOkDE5pXBubpbeyC4T5q4-VKTg9w_tbYM1fMmaG7SIlKoymyoXHTEuBCw0D"
+    credential = dingtalk_stream.Credential(client_id, client_secret)
     client = dingtalk_stream.DingTalkStreamClient(credential)
 
     card_bot_handler = CardBotHandler(logger)
-
+    # 将 card_bot_handler 注册到 callback_handler_map,在消息响应路由时就可以调用此方法处理对应事件
     client.register_callback_handler(dingtalk_stream.chatbot.ChatbotMessage.TOPIC, card_bot_handler)
 
-    card_bot_handler.set_off_duty_prompt("不好意思，我已下班，请稍后联系我！")
+    card_bot_handler.set_off_duty_prompt("test不好意思，我已下班，请稍后联系我！")
 
     client.start_forever()
 

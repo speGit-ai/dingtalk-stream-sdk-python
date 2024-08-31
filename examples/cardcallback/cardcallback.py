@@ -57,9 +57,10 @@ class CardCallbackHandler(dingtalk_stream.CallbackHandler):
 
 def main():
     logger = setup_logger()
-    options = define_options()
-
-    credential = dingtalk_stream.Credential(options.client_id, options.client_secret)
+    #options = define_options()
+    client_id = "dingspupls1elxdt1m40"
+    client_secret = "0w42DlOkDE5pXBubpbeyC4T5q4-VKTg9w_tbYM1fMmaG7SIlKoymyoXHTEuBCw0D"
+    credential = dingtalk_stream.Credential(client_id, client_secret)
     client = dingtalk_stream.DingTalkStreamClient(credential)
     client.register_callback_handler(dingtalk_stream.CallbackHandler.TOPIC_CARD_CALLBACK,
                                      CardCallbackHandler(logger))
